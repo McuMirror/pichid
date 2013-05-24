@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="hid" />
+		<Option pch_mode="2" />
+		<Option compiler="sdcc" />
+		<Build>
+			<Target title="Release">
+				<Option output="bin/myUsb" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/" />
+				<Option type="1" />
+				<Option compiler="sdcc" />
+				<Compiler>
+					<Add option="-mpic16" />
+					<Add option="-p18f4550" />
+					<Add option="-V" />
+					<Add option="-Wl 18f2550.lkr" />
+					<Add directory="/usr/share/sdcc/include/pic" />
+					<Add directory="/usr/share/sdcc/include/pic16" />
+					<Add directory="/usr/share/sdcc/include" />
+				</Compiler>
+				<Linker>
+					<Add option="-L/usr/share/sdcc/lib/pic16/" />
+					<Add option="-llibio18f4550.lib" />
+					<Add option="-llibc18f.lib" />
+				</Linker>
+			</Target>
+		</Build>
+		<Unit filename="callbacks.h" />
+		<Unit filename="main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="motor.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="motor.h" />
+		<Unit filename="servo.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="servo.h" />
+		<Unit filename="solenoid.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="solenoid.h" />
+		<Unit filename="usb.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="usb.h" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
