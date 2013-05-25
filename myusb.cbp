@@ -28,21 +28,10 @@
 			</Target>
 		</Build>
 		<Unit filename="callbacks.h" />
+		<Unit filename="config.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="motor.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="motor.h" />
-		<Unit filename="servo.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="servo.h" />
-		<Unit filename="solenoid.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="solenoid.h" />
 		<Unit filename="usb.c">
 			<Option compilerVar="CC" />
 		</Unit>

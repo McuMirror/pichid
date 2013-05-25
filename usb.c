@@ -66,7 +66,7 @@ byte hidIdleRate;
 byte hidProtocol; // [0] Boot Protocol [1] Report Protocol
 byte hidRxLen;    // # of bytes put into buffer
 
-code byte deviceDescriptor[] =
+__code byte deviceDescriptor[] =
 {
     0x12, 0x01, // bLength, bDescriptorType
     0x00, 0x02, // bcdUSB (low byte), bcdUSB (high byte)
@@ -84,7 +84,7 @@ code byte deviceDescriptor[] =
 #define HISZ HID_INPUT_REPORT_BYTES
 #define HOSZ HID_OUTPUT_REPORT_BYTES
 
-code ConfigStruct configDescriptor =
+__code ConfigStruct configDescriptor =
 {
     {
     // Configuration descriptor
@@ -125,7 +125,7 @@ code ConfigStruct configDescriptor =
 #define HFRB HID_FEATURE_REPORT_BYTES
 
 #define HID_REPORT_SIZE 0x2f // Size is from HID Descriptor tool
-code byte HIDReport[HID_REPORT_SIZE] = {
+__code byte HIDReport[HID_REPORT_SIZE] = {
     0x06, 0xa0, 0xff,  // USAGE_PAGE (Vendor Defined Page 1)
     0x09, 0x01,        // USAGE (Vendor Usage 1)
     0xa1, 0x01,        // COLLECTION (Application)
@@ -150,18 +150,18 @@ code byte HIDReport[HID_REPORT_SIZE] = {
     0xc0               // END_COLLECTION
 };
 
-code byte stringDescriptor0[] =
+__code byte stringDescriptor0[] =
 {
     0x04, STRING_DESCRIPTOR,
     0x09, 0x04,
 };
-code byte stringDescriptor1[] =
+__code byte stringDescriptor1[] =
 {
     0x0E, STRING_DESCRIPTOR, // bLength, bDscType
     'X', 0x00, 'a', 0x00, 'n', 0x00, 'd', 0x00,
     'e', 0x00, 'r', 0x00,
 };
-code byte stringDescriptor2[] =
+__code byte stringDescriptor2[] =
 {
     0x20, STRING_DESCRIPTOR,
     'U', 0x00, 'S', 0x00, 'B', 0x00, ' ', 0x00,
@@ -170,10 +170,10 @@ code byte stringDescriptor2[] =
     'H', 0x00, 'I', 0x00, 'D', 0x00,
 };
 
-volatile BDT at 0x0400 ep0Bo; //Endpoint #0 BD Out
-volatile BDT at 0x0404 ep0Bi; //Endpoint #0 BD In
-volatile BDT at 0x0408 ep1Bo; //Endpoint #1 BD Out
-volatile BDT at 0x040C ep1Bi; //Endpoint #1 BD In
+volatile BDT __at 0x0400 ep0Bo; //Endpoint #0 BD Out
+volatile BDT __at 0x0404 ep0Bi; //Endpoint #0 BD In
+volatile BDT __at 0x0408 ep1Bo; //Endpoint #1 BD Out
+volatile BDT __at 0x040C ep1Bi; //Endpoint #1 BD In
 
 // TBD: add definitions for additional endpoints (2-16).
 
@@ -359,7 +359,7 @@ printf("HID: REPORT_DESCRIPTOR\r\n");
 #endif
             // Report descriptor.
             requestHandled = 1;
-            outPtr = (code byte *)HIDReport;
+            outPtr = (__code byte *)HIDReport;
             wCount = HID_REPORT_SIZE;
         }
         else if (descriptorType == PHYSICAL_DESCRIPTOR)
@@ -1157,13 +1157,11 @@ void ProcessUSBTransactions(void)
     }
 }
 
-#if 1
 // Test - put something into EEPROM
-code at 0xF00000 word dataEEPROM[] =
+__code __at 0xF00000 word dataEEPROM[] =
 {
     0, 1, 2, 3, 4, 5, 6, 7,
     '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
 };
-#endif
 

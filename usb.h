@@ -104,10 +104,10 @@ extern byte selfPowered;
 extern byte remoteWakeup;
 extern byte currentConfiguration;
 
-extern volatile BDT at 0x0400 ep0Bo; //Endpoint #0 BD Out
-extern volatile BDT at 0x0404 ep0Bi; //Endpoint #0 BD In
-extern volatile BDT at 0x0408 ep1Bo; //Endpoint #1 BD Out
-extern volatile BDT at 0x040C ep1Bi; //Endpoint #1 BD In
+extern volatile BDT __at 0x0400 ep0Bo; //Endpoint #0 BD Out
+extern volatile BDT __at 0x0404 ep0Bi; //Endpoint #0 BD In
+extern volatile BDT __at 0x0408 ep1Bo; //Endpoint #1 BD Out
+extern volatile BDT __at 0x040C ep1Bi; //Endpoint #1 BD In
 
 // Every device request starts with an 8 byte setup packet (USB 2.0, chap 9.3)
 // with a standard layout.  The meaning of wValue and wIndex will
