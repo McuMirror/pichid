@@ -15,7 +15,7 @@
 					<Add option="-mpic16" />
 					<Add option="-p18f4550" />
 					<Add option="-V" />
-					<Add option="-Wl 18f2550.lkr" />
+					<Add option="-Wl 18f4550.lkr" />
 					<Add directory="/usr/share/sdcc/include/pic" />
 					<Add directory="/usr/share/sdcc/include/pic16" />
 					<Add directory="/usr/share/sdcc/include" />

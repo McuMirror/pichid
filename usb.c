@@ -189,6 +189,8 @@ volatile byte controlTransferBuffer[E0SZ];
 volatile byte HIDRxBuffer[HID_OUTPUT_REPORT_BYTES];
 volatile byte HIDTxBuffer[HID_INPUT_REPORT_BYTES];
 
+// ##############################################################################
+
 //
 // Start of code for HID specific code.
 //
@@ -198,12 +200,12 @@ volatile byte HIDTxBuffer[HID_INPUT_REPORT_BYTES];
 // the SIE was busy processing the last request), then 0 is returned.
 byte HIDTxReport(byte *buffer, byte len)
 {
-#if !USE_MEMCPY
+    #if !USE_MEMCPY
     byte i;
-#endif
-#if DEBUG_PRINT
-printf("HIDTxReport: %d\r\n", (word)len);
-#endif
+    #endif
+    #if DEBUG_PRINT
+    printf("HIDTxReport: %d\r\n", (word)len);
+    #endif
     // If the CPU still owns the SIE, then don't try to send anything.
     if (ep1Bi.Stat & UOWN)
         return 0;
@@ -213,12 +215,12 @@ printf("HIDTxReport: %d\r\n", (word)len);
         len = HID_INPUT_REPORT_BYTES;
 
    // Copy data from user's buffer to dual-ram buffer
-#if USE_MEMCPY
+    #if USE_MEMCPY
     memcpy(HIDTxBuffer, buffer, len);
-#else
+    #else
     for (i = 0; i < len; i++)
         HIDTxBuffer[i] = buffer[i];
-#endif
+    #endif
 
     // Toggle the data bit and give control to the SIE
     ep1Bi.Cnt = len;
@@ -230,38 +232,38 @@ printf("HIDTxReport: %d\r\n", (word)len);
     return len;
 }
 
+// ##############################################################################
+
 // Read up to len bytes from HID output buffer.  Actual number of bytes put into
 // buffer is returned.  If there are fewer than len bytes, then only the available
 // bytes will be returned.  Any bytes in the buffer beyond len will be discarded.
 byte HIDRxReport(byte *buffer, byte len)
 {
     hidRxLen = 0;
-#if DEBUG_PRINT
-    // printf("HIDRxReport: %d\r\n", len);
-#endif
+    #if DEBUG_PRINT
+    printf("HIDRxReport: %d\r\n", len);
+    #endif
 
     // If the SIE doesn't own the output buffer descriptor, then it is safe to
     // pull data from it.
-    if(!(ep1Bo.Stat & UOWN))
-    {
+    if(!(ep1Bo.Stat & UOWN)) {
         // See if the host sent fewer bytes that we asked for.
         if(len > ep1Bo.Cnt)
             len = ep1Bo.Cnt;
 
         // Copy data from dual-ram buffer to user's buffer
-#if USE_MEMCPY
+        #if USE_MEMCPY
         memcpy(buffer, HIDRxBuffer, len);
-#else
-        for(hidRxLen = 0; hidRxLen < len; hidRxLen++)
-        {
+        #else
+        for(hidRxLen = 0; hidRxLen < len; hidRxLen++) {
             buffer[hidRxLen] = HIDRxBuffer[hidRxLen];
         }
-#endif
+        #endif
 
-#if DEBUG_PRINT
-        //printf("HIDRxReport: %d: 0x%hx 0x%hx 0x%hx 0x%hx\r\n",
-        //    (word)len, (byte)buffer[0], (byte)buffer[1], (byte)buffer[2], (byte)buffer[3]);
-#endif
+        #if DEBUG_PRINT
+        printf("HIDRxReport: %d: 0x%hx 0x%hx 0x%hx 0x%hx\r\n",
+            (word)len, (byte)buffer[0], (byte)buffer[1], (byte)buffer[2], (byte)buffer[3]);
+        #endif
         // Reset the HID output buffer descriptor so the host
         // can send more data.
         ep1Bo.Cnt = sizeof(HIDRxBuffer);
@@ -272,17 +274,18 @@ byte HIDRxReport(byte *buffer, byte len)
     }
 
     return hidRxLen;
-
 }
+
+// ##############################################################################
 
 // After configuration is complete, this routine is called to initialize
 // the endpoints (e.g., assign buffer addresses).
 void HIDInitEndpoint(void)
 {
     hidRxLen =0;
-#if DEBUG_PRINT
-//printf("HIDInitEndpoint\r\n");
-#endif
+    #if DEBUG_PRINT
+    printf("HIDInitEndpoint\r\n");
+    #endif
 
     // Turn on both in and out for this endpoint
     UEP1 = 0x1E;
@@ -295,15 +298,17 @@ void HIDInitEndpoint(void)
     ep1Bi.Stat = DTS;
 }
 
+// ##############################################################################
+
 // If the setup stage indicates that this is a GET_REPORT request, we vector
 // to user supplied routines to determine what (if any) data should be sent
 // back.
 void HIDGetReport(void)
 {
     byte reportID = SetupPacket.wValue0;
-#if DEBUG_PRINT
-    // printf("HIDGetReport: 0x%x\r\n", (word)SetupPacket.wValue1);
-#endif
+    #if DEBUG_PRINT
+    printf("HIDGetReport: 0x%x\r\n", (word)SetupPacket.wValue1);
+    #endif
 
     // Determine which kind of report is being requested
     if (SetupPacket.wValue1 == 0x01)
@@ -312,20 +317,24 @@ void HIDGetReport(void)
         requestHandled = GetFeatureReport(reportID);
 }
 
+// ##############################################################################
+
 // Process SET_REPORT transaction
 void HIDSetReport(void)
 {
     byte reportID = SetupPacket.wValue0;
     // The report type is in the high byte of the Setup packet's Value field.
     // 3 = Feature; 2 = Output.
-#if DEBUG_PRINT
-    // printf("HIDSetReport: 0x%ux\r\n", (word)SetupPacket.wValue1);
-#endif
+    #if DEBUG_PRINT
+    printf("HIDSetReport: 0x%ux\r\n", (word)SetupPacket.wValue1);
+    #endif
     if (SetupPacket.wValue1 == 0x02)
         requestHandled = SetupOutputReport(reportID);
     else if (SetupPacket.wValue1 == 0x03)
         requestHandled = SetupFeatureReport(reportID);
 }
+
+// ##############################################################################
 
 // Process HID specific requests
 void ProcessHIDRequest(void)
@@ -338,110 +347,103 @@ void ProcessHIDRequest(void)
 
     bRequest = SetupPacket.bRequest;
 
-    if (bRequest == GET_DESCRIPTOR)
-    {
+    if (bRequest == GET_DESCRIPTOR) {
         // Request for a descriptor.
         byte descriptorType  = SetupPacket.wValue1;
-        if (descriptorType == HID_DESCRIPTOR)
-        {
-#if DEBUG_PRINT
-printf("HID: HID_DESCRIPTOR\r\n");
-#endif
+        switch (descriptorType) {
+        case HID_DESCRIPTOR :
+            #if DEBUG_PRINT
+            printf("HID: HID_DESCRIPTOR\r\n");
+            #endif
             // HID descriptor.
             requestHandled = 1;
             outPtr = (byte *)&configDescriptor.HIDDescriptor;
             wCount = HID_HEADER_SIZE;
-        }
-        else if (descriptorType == REPORT_DESCRIPTOR)
-        {
-#if DEBUG_PRINT
-printf("HID: REPORT_DESCRIPTOR\r\n");
-#endif
+            break;
+        case REPORT_DESCRIPTOR:
+            #if DEBUG_PRINT
+            printf("HID: REPORT_DESCRIPTOR\r\n");
+            #endif
             // Report descriptor.
             requestHandled = 1;
             outPtr = (__code byte *)HIDReport;
             wCount = HID_REPORT_SIZE;
-        }
-        else if (descriptorType == PHYSICAL_DESCRIPTOR)
-        {
-#if DEBUG_PRINT
-printf("HID: PHYSICAL_DESCRIPTOR\r\n");
-#endif
-            // Physical descriptor.
-        }
-        else
-        {
-#if DEBUG_PRINT
+            break;
+        case PHYSICAL_DESCRIPTOR:
+            #if DEBUG_PRINT
+            printf("HID: PHYSICAL_DESCRIPTOR\r\n");
+            #endif
+            break;
+        default:
+            break;
+            #if DEBUG_PRINT
             printf("HID: Unsupported descriptor: 0x%x\r\n", SetupPacket.wValue1);
-#endif
+            #endif
         }
     }
 
-    if ((SetupPacket.bmRequestType & 0x60) != 0x20)
-    {
-#if DEBUG_PRINT
-        // printf("Not CLASS request: 0x%x, 0x%x\r\n", (word)(SetupPacket.bmRequestType & 0x60), (word)SetupPacket.bRequest);
-#endif
+    if ((SetupPacket.bmRequestType & 0x60) != 0x20) {
+        #if DEBUG_PRINT
+        printf("Not CLASS request: 0x%x, 0x%x\r\n", (word)(SetupPacket.bmRequestType & 0x60), (word)SetupPacket.bRequest);
+        #endif
         return;
     }
 
-    // HID-specific requests.
-    if (bRequest == GET_REPORT)
-    {
-#if DEBUG_PRINT
-        // printf("HID: GET_REPORT\r\n");
-#endif
-        HIDGetReport();
-    }
-    else if (bRequest == SET_REPORT)
-    {
-#if DEBUG_PRINT
-        // printf("HID: SET_REPORT\r\n");
-#endif
-        HIDPostProcess = 1;
-        HIDSetReport();
-    }
-    else if (bRequest == GET_IDLE)
-    {
-#if DEBUG_PRINT
-        printf("HID: GET_IDLE\r\n");
-#endif
-        requestHandled = 1;
-        outPtr = &hidIdleRate;
-        wCount = 1;
-    }
-    else if (bRequest == SET_IDLE)
-    {
-#if DEBUG_PRINT
-        printf("HID: SET_IDLE\r\n");
-#endif
-        requestHandled = 1;
-        hidIdleRate = SetupPacket.wValue1;
-    }
-    else if (bRequest == GET_PROTOCOL)
-    {
-#if DEBUG_PRINT
-        printf("HID: GET_PROTOCOL\r\n");
-#endif
-        requestHandled = 1;
-        outPtr = &hidProtocol;
-        wCount = 1;
-    }
-    else if (bRequest == SET_PROTOCOL)
-    {
-#if DEBUG_PRINT
-        printf("HID: SET_PROTOCOL\r\n");
-#endif
-        requestHandled = 1;
-        hidProtocol = SetupPacket.wValue0;
-    }
-    else
-    {
-#if DEBUG_PRINT
-        printf("HID: Unknown request: 0x%x\r\n", SetupPacket.bRequest);
-#endif
+    switch(bRequest) {
+        case GET_REPORT:
+            #if DEBUG_PRINT
+            rintf("HID: GET_REPORT\r\n");
+            #endif
+            HIDGetReport();
+            break;
+        case SET_REPORT:
+            #if DEBUG_PRINT
+            printf("HID: SET_REPORT\r\n");
+            #endif
+            HIDPostProcess = 1;
+            HIDSetReport();
+            break;
+        case GET_IDLE:
+            #if DEBUG_PRINT
+            printf("HID: GET_IDLE\r\n");
+            #endif
+            requestHandled = 1;
+            outPtr = &hidIdleRate;
+            wCount = 1;
+            break;
+        case SET_IDLE:
+            #if DEBUG_PRINT
+            printf("HID: SET_IDLE\r\n");
+            #endif
+            requestHandled = 1;
+            hidIdleRate = SetupPacket.wValue1;
+            break;
+        case GET_PROTOCOL:
+            #if DEBUG_PRINT
+            printf("HID: GET_PROTOCOL\r\n");
+            #endif
+            requestHandled = 1;
+            outPtr = &hidProtocol;
+            wCount = 1;
+            break;
+        case SET_PROTOCOL:
+            #if DEBUG_PRINT
+            printf("HID: SET_PROTOCOL\r\n");
+            #endif
+            requestHandled = 1;
+            hidProtocol = SetupPacket.wValue0;
+            break;
+        default:
+            #if DEBUG_PRINT
+            printf("HID: Unknown request: 0x%x\r\n", SetupPacket.bRequest);
+            #endif
+            break;
     }
 }
+
+
+// ##############################################################################
+
 
 //
 // Start of code to process standard requests (USB chapter 9)
@@ -453,46 +455,37 @@ static void GetDescriptor(void)
 #if DEBUG_PRINT
     //printf("GetDescriptor\r\n");
 #endif
-    if(SetupPacket.bmRequestType == 0x80)
-    {
+    if(SetupPacket.bmRequestType == 0x80) {
         byte descriptorType  = SetupPacket.wValue1;
         byte descriptorIndex = SetupPacket.wValue0;
 
-        if (descriptorType == DEVICE_DESCRIPTOR)
-        {
-#if DEBUG_PRINT
+        switch(descriptorType) {
+            case DEVICE_DESCRIPTOR:
+                #if DEBUG_PRINT
                 printf("DEVICE_DESCRIPTOR\r\n");
-#endif
+                #endif
                 requestHandled = 1;
                 outPtr = (byte *)&deviceDescriptor;
                 wCount = DEVICE_DESCRIPTOR_SIZE;
-        }
-        else if (descriptorType == CONFIGURATION_DESCRIPTOR)
-        {
-#if DEBUG_PRINT
+                break;
+            case CONFIGURATION_DESCRIPTOR:
+                #if DEBUG_PRINT
                 printf("CONFIGURATION_DESCRIPTOR: %d\r\n", descriptorIndex);
-#endif
+                #endif
                 requestHandled = 1;
-#if 0
-				// Note: these are a workaround for early versions of SDCC 2.5
-                outPtr = (byte *)&configDescriptor;
-                // wCount = *(outPtr + 2);
-                wCount = CFSZ;
-#else
+
                 // Early versions of SDCC 2.5 made bad code with the following
 				// two lines.  Current builds will work correctly.
                 outPtr = (byte *)&configDescriptor;
                 wCount = configDescriptor.configHeader[2];
-#endif
-#if DEBUG_PRINT
+                #if DEBUG_PRINT
                 printf("Total config size: %d\r\n", wCount);
-#endif
-        }
-        else if (descriptorType == STRING_DESCRIPTOR)
-        {
-#if DEBUG_PRINT
+                #endif
+                break;
+            case STRING_DESCRIPTOR:
+                #if DEBUG_PRINT
                 printf("STRING_DESCRIPTOR: %d\r\n", (word)descriptorIndex);
-#endif
+                #endif
                 requestHandled = 1;
                 if (descriptorIndex == 0)
                     outPtr = (byte *)&stringDescriptor0;
@@ -501,15 +494,17 @@ static void GetDescriptor(void)
                 else
                     outPtr = (byte *)&stringDescriptor2;
                 wCount = *outPtr;
-        }
-        else
-        {
-#if DEBUG_PRINT
+                break;
+            default:
+                #if DEBUG_PRINT
                 printf("Unknown Descriptor: 0x%ux\r\n", (word)descriptorType);
-#endif
+                #endif
+                break;
         }
     }
 }
+
+// ##############################################################################
 
 // Process GET_STATUS
 static void GetStatus(void)
@@ -523,42 +518,47 @@ printf("GetStatus\r\n");
     controlTransferBuffer[1] = 0;
 
     // See where the request goes
-    if (recipient == 0x00)
-    {
-        // Device
-        requestHandled = 1;
-        // Set bits for self powered device and remote wakeup.
-        if (selfPowered)
-            controlTransferBuffer[0] |= 0x01;
-        if (remoteWakeup)
-            controlTransferBuffer[0] |= 0x02;
-    }
-    else if (recipient == 0x01)
-    {
-        // Interface
-        requestHandled = 1;
-    }
-    else if (recipient == 0x02)
-    {
-        // Endpoint
-        byte endpointNum = SetupPacket.wIndex0 & 0x0F;
-        byte endpointDir = SetupPacket.wIndex0 & 0x80;
-        requestHandled = 1;
-        // Endpoint descriptors are 8 bytes long, with each in and out taking 4 bytes
-        // within the endpoint. (See PIC datasheet.)
-        inPtr = (byte *)&ep0Bo + (endpointNum * 8);
-        if (endpointDir)
-            inPtr += 4;
-        if(*inPtr & BSTALL)
-            controlTransferBuffer[0] = 0x01;
+    switch(recipient) {
+        case 0x00:
+            // Device
+            requestHandled = 1;
+            // Set bits for self powered device and remote wakeup.
+            if (selfPowered)
+                controlTransferBuffer[0] |= 0x01;
+            if (remoteWakeup)
+                controlTransferBuffer[0] |= 0x02;
+            break;
+
+        case 0x01:
+            // Interface
+            requestHandled = 1;
+            break;
+
+        case 0x02:
+            // Endpoint
+            // byte endpointNum = SetupPacket.wIndex0 & 0x0F;
+            // byte endpointDir = SetupPacket.wIndex0 & 0x80;
+            requestHandled = 1;
+            // Endpoint descriptors are 8 bytes long, with each in and out taking 4 bytes
+            // within the endpoint. (See PIC datasheet.)
+            inPtr = (byte *)&ep0Bo + ((SetupPacket.wIndex0 & 0x0F) * 8);
+            if (SetupPacket.wIndex0 & 0x80)
+                inPtr += 4;
+            if(*inPtr & BSTALL)
+                controlTransferBuffer[0] = 0x01;
+            break;
+
+        default:
+            break;
     }
 
-    if (requestHandled)
-    {
+    if (requestHandled) {
         outPtr = (byte *)&controlTransferBuffer;
         wCount = 2;
     }
 }
+
+// ##############################################################################
 
 // Process SET_FEATURE and CLEAR_FEATURE
 static void SetFeature(void)
@@ -569,11 +569,9 @@ static void SetFeature(void)
 // printf("SetFeature\r\n");
 #endif
 
-    if (recipient == 0x00)
-    {
+    if (recipient == 0x00) {
         // Device
-        if (feature == DEVICE_REMOTE_WAKEUP)
-        {
+        if (feature == DEVICE_REMOTE_WAKEUP) {
             requestHandled = 1;
             if (SetupPacket.bRequest == SET_FEATURE)
                 remoteWakeup = 1;
@@ -582,13 +580,11 @@ static void SetFeature(void)
         }
         // TBD: Handle TEST_MODE
     }
-    else if (recipient == 0x02)
-    {
+    else if (recipient == 0x02) {
         // Endpoint
         byte endpointNum = SetupPacket.wIndex0 & 0x0F;
         byte endpointDir = SetupPacket.wIndex0 & 0x80;
-        if ((feature == ENDPOINT_HALT) && (endpointNum != 0))
-        {
+        if ((feature == ENDPOINT_HALT) && (endpointNum != 0)) {
             // Halt endpoint (as long as it isn't endpoint 0)
             requestHandled = 1;
             // Endpoint descriptors are 8 bytes long, with each in and out taking 4 bytes
@@ -597,10 +593,9 @@ static void SetFeature(void)
             if (endpointDir)
                 inPtr += 4;
 
-            if(SetupPacket.bRequest == SET_FEATURE)
+            if(SetupPacket.bRequest == SET_FEATURE) {
                 *inPtr = 0x84;
-            else
-            {
+            } else {
                 if(endpointDir == 1)
                     *inPtr = 0x00;
                 else
@@ -609,6 +604,8 @@ static void SetFeature(void)
         }
     }
 }
+
+// ##############################################################################
 
 void ProcessStandardRequest(void)
 {
@@ -619,8 +616,7 @@ void ProcessStandardRequest(void)
         // requests have to be handled seperately.
         return;
 
-    if (request == SET_ADDRESS)
-    {
+    if (request == SET_ADDRESS) {
             // Set the address of the device.  All future requests
             // will come to that address.  Can't actually set UADDR
             // to the new address yet because the rest of the SET_ADDRESS
@@ -632,12 +628,10 @@ void ProcessStandardRequest(void)
             deviceState = ADDRESS;
             deviceAddress = SetupPacket.wValue0;
     }
-    else if (request == GET_DESCRIPTOR)
-    {
+    else if (request == GET_DESCRIPTOR) {
             GetDescriptor();
     }
-    else if (request == SET_CONFIGURATION)
-    {
+    else if (request == SET_CONFIGURATION) {
 #if DEBUG_PRINT
             printf("SET_CONFIGURATION\r\n");
 #endif
@@ -661,8 +655,7 @@ void ProcessStandardRequest(void)
                 // interfaces beyond the one used for the HID
             }
     }
-    else if (request == GET_CONFIGURATION)
-    {
+    else if (request == GET_CONFIGURATION) {
 #if DEBUG_PRINT
             printf("GET_CONFIGURATION\r\n");
 #endif
@@ -670,17 +663,13 @@ void ProcessStandardRequest(void)
             outPtr = (byte*)&currentConfiguration;
             wCount = 1;
     }
-    else if (request == GET_STATUS)
-    {
+    else if (request == GET_STATUS) {
             GetStatus();
     }
-    else if ((request == CLEAR_FEATURE) ||
-        (request == SET_FEATURE))
-    {
+    else if ((request == CLEAR_FEATURE) || (request == SET_FEATURE)) {
             SetFeature();
     }
-    else if (request == GET_INTERFACE)
-    {
+    else if (request == GET_INTERFACE) {
             // No support for alternate interfaces.  Send
             // zero back to the host.
 #if DEBUG_PRINT
@@ -691,22 +680,19 @@ void ProcessStandardRequest(void)
             outPtr = (byte *)&controlTransferBuffer;
             wCount = 1;
     }
-    else if (request == SET_INTERFACE)
-    {
+    else if (request == SET_INTERFACE) {
             // No support for alternate interfaces - just ignore.
 #if DEBUG_PRINT
             printf("SET_INTERFACE\r\n");
 #endif
             requestHandled = 1;
     }
-    else if (request == SET_DESCRIPTOR)
-    {
+    else if (request == SET_DESCRIPTOR) {
 #if DEBUG_PRINT
             printf("SET_DESCRIPTOR\r\n");
 #endif
     }
-    else if (request == SYNCH_FRAME)
-    {
+    else if (request == SYNCH_FRAME) {
 #if DEBUG_PRINT
             printf("SYNCH_FRAME\r\n");
 #endif
@@ -717,6 +703,8 @@ void ProcessStandardRequest(void)
 #endif
     }
 }
+
+// ##############################################################################
 
 // Data stage for a Control Transfer that sends data to the host
 void InDataStage(void)
@@ -753,8 +741,7 @@ void InDataStage(void)
 #if USE_MEMCPY
     memcpy(inPtr, outPtr, bufferSize);
 #else
-    for (i=0;i<bufferSize;i++)
-    {
+    for (i=0;i<bufferSize;i++) {
 #if DEBUG_PRINT
         //printf("0x%x = 0x%x (0x%uhx) ", PTR16(ramPtr), PTR16(romPtr), *romPtr);
 #endif
@@ -762,6 +749,8 @@ void InDataStage(void)
     }
 #endif
 }
+
+// ##############################################################################
 
 // Data stage for a Control Transfer that reads data from the host
 void OutDataStage(void)
@@ -781,8 +770,7 @@ void OutDataStage(void)
 #if USE_MEMCPY
     memcpy(inPtr, outPtr, bufferSize);
 #else
-    for (i=0;i<bufferSize;i++)
-    {
+    for (i=0;i<bufferSize;i++) {
 #if DEBUG_PRINT
         // printf("0x%x = 0x%x (0x%uhx) ", PTR16(inPtr), PTR16(outPtr), *outPtr);
 #endif
@@ -793,6 +781,8 @@ void OutDataStage(void)
 #endif
 #endif
 }
+
+// ##############################################################################
 
 // Process the Setup stage of a control transfer.  This code initializes the
 // flags that let the firmware know what to do during subsequent stages of
@@ -818,16 +808,14 @@ void SetupStage(void)
 
     // TBD: Add handlers for any other classes/interfaces in the device
 
-    if (!requestHandled)
-    {
+    if (!requestHandled) {
         // If this service wasn't handled then stall endpoint 0
         ep0Bo.Cnt = E0SZ;
         ep0Bo.ADDR = PTR16(&SetupPacket);
         ep0Bo.Stat = UOWN | BSTALL;
         ep0Bi.Stat = UOWN | BSTALL;
     }
-    else if (SetupPacket.bmRequestType & 0x80)
-    {
+    else if (SetupPacket.bmRequestType & 0x80) {
         // Device-to-host
         if(SetupPacket.wLength < wCount)
             wCount = SetupPacket.wLength;
@@ -843,8 +831,7 @@ void SetupStage(void)
         // Give to SIE, DATA1 packet, enable data toggle checks
         ep0Bi.Stat = UOWN | DTS | DTSEN;
     }
-    else
-    {
+    else {
         // Host-to-device
         ctrlTransferStage = DATA_OUT_STAGE;
 
@@ -863,6 +850,8 @@ void SetupStage(void)
     UCONbits.PKTDIS = 0;
 }
 
+// ##############################################################################
+
 // Configures the buffer descriptor for endpoint 0 so that it is waiting for
 // the status stage of a control transfer.
 void WaitForSetupStage(void)
@@ -874,6 +863,8 @@ void WaitForSetupStage(void)
     ep0Bi.Stat = 0x00;         // Give control to CPU
 }
 
+// ##############################################################################
+
 // This is the starting point for processing a Control Transfer.  The code directly
 // follows the sequence of transactions described in the USB spec chapter 5.  The
 // only Control Pipe in this firmware is the Default Control Pipe (endpoint 0).
@@ -883,40 +874,34 @@ void ProcessControlTransfer(void)
 #if DEBUG_PRINT
     // printf("ProcessControlTransfer\r\n");
 #endif
-    if (USTAT == 0)
-    {
+    if (USTAT == 0) {
         // Endpoint 0:out
         byte PID = (ep0Bo.Stat & 0x3C) >> 2; // Pull PID from middle of BD0STAT
         if (PID == 0x0D)
             // SETUP PID - a transaction is starting
             SetupStage();
-        else if (ctrlTransferStage == DATA_OUT_STAGE)
-        {
+        else if (ctrlTransferStage == DATA_OUT_STAGE) {
             // Complete the data stage so that all information has
             // passed from host to device before servicing it.
             OutDataStage();
 
             // If this is a HID request, then invoke the callback to handle
             // the control out (when necessary).
-            if (HIDPostProcess)
-            {
+            if (HIDPostProcess) {
                 // Determine which report is being set.
                 byte reportID = SetupPacket.wValue0;
 
                 // Find out if an Output or Feature report has arrived on the control pipe.
                 // Get the report type from the Setup packet.
-                if (SetupPacket.wValue1 == 0x02)
-                {
+                if (SetupPacket.wValue1 == 0x02) {
                     // Output report
                     SetOutputReport(reportID);
                 }
-                else if (SetupPacket.wValue1 == 0x03)
-                {
+                else if (SetupPacket.wValue1 == 0x03) {
                     // Feature report
                     SetFeatureReport(reportID);
                 }
-                else
-                {
+                else {
                     // Unknown report type
                 }
             }
@@ -927,17 +912,14 @@ void ProcessControlTransfer(void)
             else
                 ep0Bo.Stat = UOWN | DTS | DTSEN;
         }
-        else
-        {
+        else {
             // Prepare for the Setup stage of a control transfer
             WaitForSetupStage();
         }
     }
-    else if(USTAT == 0x04)
-    {
+    else if(USTAT == 0x04) {
         // Endpoint 0:in
-        if ((UADDR == 0) && (deviceState == ADDRESS))
-        {
+        if ((UADDR == 0) && (deviceState == ADDRESS)) {
             // TBD: ensure that the new address matches the value of
             // "deviceAddress" (which came in through a SET_ADDRESS).
             UADDR = SetupPacket.wValue0;
@@ -950,8 +932,7 @@ void ProcessControlTransfer(void)
                 deviceState = DEFAULT;
         }
 
-        if (ctrlTransferStage == DATA_IN_STAGE)
-        {
+        if (ctrlTransferStage == DATA_IN_STAGE) {
             // Start (or continue) transmitting data
             InDataStage();
 
@@ -961,14 +942,12 @@ void ProcessControlTransfer(void)
             else
                 ep0Bi.Stat = UOWN | DTS | DTSEN;
         }
-        else
-        {
+        else {
             // Prepare for the Setup stage of a control transfer
             WaitForSetupStage();
         }
     }
-    else
-    {
+    else {
 #if DEBUG_PRINT
         printf("USTAT = 0x%uhx\r\n", USTAT);
 #endif
@@ -976,12 +955,13 @@ void ProcessControlTransfer(void)
 }
 
 
+// ##############################################################################
+
 void EnableUSBModule(void)
 {
     // TBD: Check for voltage coming from the USB cable and use that
     // as an indication we are attached.
-    if(UCONbits.USBEN == 0)
-    {
+    if(UCONbits.USBEN == 0) {
 #if DEBUG_PRINT
         printf("Enable the module\r\n");
 #endif
@@ -993,8 +973,7 @@ void EnableUSBModule(void)
 
     // If we are attached and no single-ended zero is detected, then
     // we can move to the Powered state.
-    if ((deviceState == ATTACHED) && !UCONbits.SE0)
-    {
+    if ((deviceState == ATTACHED) && !UCONbits.SE0) {
         UIR = 0;
         UIE = 0;
         UIEbits.URSTIE = 1;
@@ -1005,6 +984,8 @@ void EnableUSBModule(void)
 #endif
     }
 }
+
+// ##############################################################################
 
 // Unsuspend the device
 void UnSuspend(void)
@@ -1018,6 +999,8 @@ void UnSuspend(void)
     UIRbits.ACTVIF = 0;
 }
 
+// ##############################################################################
+
 // Full speed devices get a Start Of Frame (SOF) packet every 1 millisecond.
 // Nothing is currently done with this interrupt (it is simply masked out).
 void StartOfFrame(void)
@@ -1026,20 +1009,23 @@ void StartOfFrame(void)
     UIRbits.SOFIF = 0;
 }
 
+// ##############################################################################
+
 // This routine is called in response to the code stalling an endpoint.
 void Stall(void)
 {
 #if DEBUG_PRINT
     printf("Stall\r\n");
 #endif
-    if(UEP0bits.EPSTALL == 1)
-    {
+    if(UEP0bits.EPSTALL == 1) {
         // Prepare for the Setup stage of a control transfer
         WaitForSetupStage();
         UEP0bits.EPSTALL = 0;
     }
     UIRbits.STALLIF = 0;
 }
+
+// ##############################################################################
 
 // Suspend all processing until we detect activity on the USB bus
 void Suspend(void)
@@ -1072,6 +1058,8 @@ void Suspend(void)
 #endif
 }
 
+// ##############################################################################
+
 void BusReset()
 {
     UEIR  = 0x00;
@@ -1099,6 +1087,8 @@ void BusReset()
     deviceState = DEFAULT;
 }
 
+// ##############################################################################
+
 // Main entry point for USB tasks.  Checks interrupts, then checks for transactions.
 void ProcessUSBTransactions(void)
 {
@@ -1116,27 +1106,22 @@ void ProcessUSBTransactions(void)
         return;
 
      // Process a bus reset
-    if (UIRbits.URSTIF && UIEbits.URSTIE)
-    {
+    if (UIRbits.URSTIF && UIEbits.URSTIE) {
         BusReset();
     }
 
-    if (UIRbits.IDLEIF && UIEbits.IDLEIE)
-    {
+    if (UIRbits.IDLEIF && UIEbits.IDLEIE) {
         // No bus activity for a while - suspend the firmware
         Suspend();
     }
-    if (UIRbits.SOFIF && UIEbits.SOFIE)
-    {
+    if (UIRbits.SOFIF && UIEbits.SOFIE) {
         StartOfFrame();
     }
-    if (UIRbits.STALLIF && UIEbits.STALLIE)
-    {
+    if (UIRbits.STALLIF && UIEbits.STALLIE) {
         Stall();
     }
 
-    if (UIRbits.UERRIF && UIEbits.UERRIE)
-    {
+    if (UIRbits.UERRIF && UIEbits.UERRIE) {
         // TBD: See where the error came from.
 
         // Clear errors
@@ -1148,8 +1133,7 @@ void ProcessUSBTransactions(void)
         return;
 
     // A transaction has finished.  Try default processing on endpoint 0.
-    if(UIRbits.TRNIF && UIEbits.TRNIE)
-    {
+    if(UIRbits.TRNIF && UIEbits.TRNIE) {
         ProcessControlTransfer();
 
         // Turn off interrupt
@@ -1157,11 +1141,4 @@ void ProcessUSBTransactions(void)
     }
 }
 
-// Test - put something into EEPROM
-__code __at 0xF00000 word dataEEPROM[] =
-{
-    0, 1, 2, 3, 4, 5, 6, 7,
-    '0', '1', '2', '3', '4', '5', '6', '7',
-    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-};
 
